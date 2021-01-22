@@ -37,6 +37,73 @@ ims = flopy.mf6.ModflowIms(sim, pname="ims", complexity="SIMPLE")
 model_nam_file = "{}.nam".format(name)
 gwf = flopy.mf6.ModflowGwf(sim, modelname=name, model_nam_file=model_nam_file)
 
+#Se definene valores de espesor de filas y paquete de discretización.
+bot = np.linspace(-H / Nlay, -H, Nlay)
+delrow = delcol = L / (N - 1)  #Espesor de filas
+dis = flopy.mf6.ModflowGwfdis(  #Paquete de discretización
+    gwf,
+    nlay=Nlay,
+    nrow=N,
+    ncol=N,
+    delr=delrow,
+    delc=delcol,
+    top=0.0,
+    botm=bot,
+)
+
+#Entregar el valor de partida para el método numérico.
+start = h1 * np.ones((Nlay, N, N))
+ic = flopy.mf6.ModflowGwfic(gwf, pname="ic", strt=start) #Initial conditions.
+
+#Not property flow - Controla flujo entre celdas.
+npf = flopy.mf6.ModflowGwfnpf(gwf, icelltype=1, k=k, save_flows=True)
+
+#
+chd_rec = [] 
+chd_rec.append(((0, int(N / 4), int(N / 4)), h2))
+for layer in range(0, Nlay):
+    for row_col in range(0, N):
+        chd_rec.append(((layer, row_col, 0), h1))
+        chd_rec.append(((layer, row_col, N - 1), h1))
+        if row_col != 0 and row_col != N - 1:
+            chd_rec.append(((layer, 0, row_col), h1))
+            chd_rec.append(((layer, N - 1, row_col), h1))
+chd = flopy.mf6.ModflowGwfchd(
+    gwf,
+    maxbound=len(chd_rec),
+    stress_period_data=chd_rec,
+    save_flows=True,
+)
+
+#
+iper = 0
+ra = chd.stress_period_data.get_data(key=iper)
+ra
+
+# Create the output control (`OC`) Package
+headfile = "{}.hds".format(name)
+head_filerecord = [headfile]
+budgetfile = "{}.cbb".format(name)
+budget_filerecord = [budgetfile]
+saverecord = [("HEAD", "ALL"), ("BUDGET", "ALL")]
+printrecord = [("HEAD", "LAST")]
+oc = flopy.mf6.ModflowGwfoc(
+    gwf,
+    saverecord=saverecord,
+    head_filerecord=head_filerecord,
+    budget_filerecord=budget_filerecord,
+    printrecord=printrecord,
+)
+
+#Construya los .txt
+sim.write_simulation()
+
+#Condición de exito
+success, buff = sim.run_simulation()
+if not success:
+    raise Exception("MODFLOW 6 did not terminate normally.")
+
+
 
 
 
