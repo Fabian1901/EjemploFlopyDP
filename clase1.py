@@ -12,9 +12,9 @@ import flopy
 
 #Se ingresan los datos 
 name = "tutorial01_mf6"
-h1 = 100
-h2 = 90
-Nlay = 10
+h1 = 110
+h2 = 80
+Nlay = 12
 N = 101
 L = 400.0
 H = 50.0
