@@ -56,6 +56,8 @@ start = h1 * np.ones((Nlay, N, N))
 ic = flopy.mf6.ModflowGwfic(gwf, pname="ic", strt=start) #Initial conditions.
 
 #Not property flow - Controla flujo entre celdas.
+k=np.ones([10,N,N])
+k[1,:,:]=5e-1
 npf = flopy.mf6.ModflowGwfnpf(gwf, icelltype=1, k=k, save_flows=True)
 
 #
@@ -121,7 +123,7 @@ x = y = np.linspace(0, L, N)
 y = y[::-1]
 fig = plt.figure(figsize=(6, 6))
 ax = fig.add_subplot(1, 1, 1, aspect="equal")
-c = ax.contour(x, y, h[-1], np.arange(90, 100.1, 0.2), colors="black")
+c = ax.contour(x, y, h[-5], np.arange(90, 100.1, 0.2), colors="black")
 plt.clabel(c, fmt="%1.1f")
 
 #Ploteando sección tranversal.
